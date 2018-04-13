@@ -7,7 +7,6 @@ const Events = require('./events');
 
 // Todo
 // - [ ] Use RSSI Threshold to determinate device distance
-// - [ ] log all discovered devices
 
 class BluetoothWatcher extends Events {
 
@@ -38,7 +37,8 @@ class BluetoothWatcher extends Events {
     this._events = {
       deviceConnected: new Rx.Subject(),
       deviceDisconnected: new Rx.Subject(),
-      allDevicesDisconnected: new Rx.Subject()
+      allDevicesDisconnected: new Rx.Subject(),
+      unknownDeviceDiscovered: new Rx.Subject()
     };
   }
 
@@ -81,7 +81,7 @@ class BluetoothWatcher extends Events {
     const device = _.pick(peripheral, this._columns);
 
     if (!this._isKnownAddress(device.address)) {
-      // todo emit unknown BT device found event
+      this._events.unknownDeviceDiscovered.onNext(device);
       return;
     }
 

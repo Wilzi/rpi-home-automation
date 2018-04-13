@@ -21,7 +21,7 @@ const motionDetector = MotionDetector.create(config.GPIO_MOTION_DETECTOR_PIN, co
 
 // Startup
 tv.getCecList();
-ledGreen.fadeIn();
+ledGreen.blink();
 bluetoothWatcher.scan();
 motionDetector.detect();
 
@@ -56,7 +56,7 @@ bluetoothWatcher.getEvent('deviceConnected').subscribe(deviceInfo => {
 });
 
 bluetoothWatcher.getEvent('deviceDisconnected').subscribe(deviceInfo => {
-  log.info('device disconnected: ', deviceInfo.advertisement.localName);
+  log.info(`device disconnected: ${deviceInfo.advertisement.localName}`);
 });
 
 bluetoothWatcher.getEvent('allDevicesDisconnected').subscribe(() => {
