@@ -3,7 +3,7 @@
 const Rx = require('rx');
 const _ = require('lodash');
 const noble = require('noble');
-const Events = require('./events');
+const Events = require('../lib/events');
 
 // Todo
 // - [ ] Use RSSI Threshold to determinate device distance

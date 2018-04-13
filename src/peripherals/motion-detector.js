@@ -2,7 +2,7 @@
 
 const Rx = require('rx');
 const Gpio = require('pigpio').Gpio;
-const Events = require('./events');
+const Events = require('../lib/events');
 
 class MotionDetector extends Events {
 
