@@ -1,23 +1,29 @@
 'use strict';
 
+const Rx = require('rx');
 const Gpio = require('pigpio').Gpio;
+const Events = require('./events');
 
-class MotionDetector {
+class MotionDetector extends Events {
 
   constructor(gpioPin, noMotionGracePeriod) {
+    super();
+
     this._noMotionGracePeriod = noMotionGracePeriod;
     this._motionDetector = new Gpio(gpioPin, { mode: Gpio.INPUT, alert: true });
     this._motionDetected = false;
     this._nonMotionTimeout = null;
   }
 
-  detect() {
-    this._motionDetector.on('alert', this._motionHandler.bind(this));
+  _initEvents() {
+    this._events = {
+      motionDetected: new Rx.Subject(),
+      noMotionDetected: new Rx.Subject()
+    };
   }
 
-  setEventCallbacks(eventCallbacks) {
-    this._eventCallbacks = eventCallbacks;
-    return this;
+  detect() {
+    this._motionDetector.on('alert', this._motionHandler.bind(this));
   }
 
   // todo should return with a promise
@@ -43,7 +49,7 @@ class MotionDetector {
     }
 
     this._motionDetected = true;
-    this._eventCallbacks.motionDetected();
+    this._events.motionDetected.onNext();
   }
 
   _handleNonMotion() {
@@ -52,7 +58,7 @@ class MotionDetector {
 
   _nonMotionDetectedEvent() {
     this._motionDetected = false;
-    this._eventCallbacks.noMotionDetected();
+    this._events.noMotionDetected.onNext();
   }
 
   _clearNonMotionTimeout() {

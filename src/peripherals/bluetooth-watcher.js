@@ -1,16 +1,19 @@
 'use strict';
 
+const Rx = require('rx');
 const _ = require('lodash');
 const noble = require('noble');
+const Events = require('./events');
 
 // Todo
 // - [ ] Use RSSI Threshold to determinate device distance
-// - [ ] Use RXJS for Event emitting instead of callbacks
 // - [ ] log all discovered devices
 
-class BluetoothWatcher {
+class BluetoothWatcher extends Events {
 
   constructor(addresses, exitGracePeriod) {
+    super();
+
     this._exitGracePeriod = exitGracePeriod;
     this._addresses = addresses;
     this._outOfRangeInterval = null;
@@ -28,6 +31,15 @@ class BluetoothWatcher {
       'services',
       'state'
     ];
+  }
+
+
+  _initEvents() {
+    this._events = {
+      deviceConnected: new Rx.Subject(),
+      deviceDisconnected: new Rx.Subject(),
+      allDevicesDisconnected: new Rx.Subject()
+    };
   }
 
 
@@ -49,12 +61,6 @@ class BluetoothWatcher {
 
   isDeviceConnected() {
     return Object.keys(this._inRangeDevices).length > 0
-  }
-
-
-  setEventCallbacks(eventCallbacks) {
-    this._eventCallbacks = eventCallbacks;
-    return this;
   }
 
 
@@ -81,7 +87,7 @@ class BluetoothWatcher {
 
     if (this._isEntered(device.id)) {
       this._log('"' + device.advertisement.localName + '" entered (RSSI ' + device.rssi + ') ' + new Date());
-      this._eventCallbacks.deviceConnected(device);
+      this._events.deviceConnected.onNext(device);
     }
 
     this._saveInRageDevice(device);
@@ -101,14 +107,14 @@ class BluetoothWatcher {
 
       if (this._isDeviceOutOfRange(device)) {
         this._log('"' + device.advertisement.localName + '" exited (RSSI ' + device.rssi + ') ' + new Date());
-        this._eventCallbacks.deviceDisconnected(device);
+        this._events.deviceDisconnected.onNext(device);
         delete this._inRangeDevices[id];
       }
     }
 
     if (this._isAllDevicesDisconnected(numberOfDevicesBeforeCleanup)) {
       this._log('All devices has been disconnected!');
-      this._eventCallbacks.allDevicesDisconnected();
+      this._events.allDevicesDisconnected.onNext();
     }
   }
 
