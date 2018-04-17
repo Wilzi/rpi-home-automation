@@ -1,10 +1,12 @@
 'use strict';
 
+const _ = require('lodash');
 const config = require('./config');
 const Log = require('./lib/log');
 const log = Log.create(config.LOG_FILE_PATH);
 const Tv = require('./peripherals/tv');
 const Led = require('./peripherals/led');
+const DateHelper = require('./lib/date-helper.js');
 const ScreenSaver = require('./peripherals/screen-saver');
 const BluetoothWatcher = require('./peripherals/bluetooth-watcher');
 const MotionDetector = require('./peripherals/motion-detector');
@@ -14,6 +16,7 @@ const ledGreen = Led.create(config.GPIO_GREEN_LED_PIN);
 const ledBlue = Led.create(config.GPIO_BLUE_LED_PIN);
 
 const tv = Tv.create();
+const dateHelper = DateHelper.create();
 const screenSaver = ScreenSaver.create();
 const bluetoothWatcher = BluetoothWatcher.create(config.BL_ADDRESSES, config.BL_EXIT_GRACE_PERIOD_MS);
 const motionDetector = MotionDetector.create(config.GPIO_MOTION_DETECTOR_PIN, config.NO_MOTION_GRACE_PERIOD_MS);
@@ -22,6 +25,7 @@ const motionDetector = MotionDetector.create(config.GPIO_MOTION_DETECTOR_PIN, co
 // Startup
 tv.getCecList();
 ledGreen.blink();
+dateHelper.start();
 bluetoothWatcher.scan();
 motionDetector.detect();
 
@@ -33,6 +37,7 @@ motionDetector.getEvent('motionDetected').subscribe(() => {
   ledGreen.fadeOut();
   ledRed.fadeIn();
 });
+
 
 motionDetector.getEvent('noMotionDetected').subscribe(() => {
   log.info('no motion detected');
@@ -46,6 +51,7 @@ motionDetector.getEvent('noMotionDetected').subscribe(() => {
   }
 });
 
+
 bluetoothWatcher.getEvent('deviceConnected').subscribe(deviceInfo => {
   log.info(`device connected: ${deviceInfo.advertisement.localName} (RSSI ${deviceInfo.rssi})`);
 
@@ -55,9 +61,11 @@ bluetoothWatcher.getEvent('deviceConnected').subscribe(deviceInfo => {
   tv.setRaspberryActiveSource();
 });
 
+
 bluetoothWatcher.getEvent('deviceDisconnected').subscribe(deviceInfo => {
   log.info(`device disconnected: ${deviceInfo.advertisement.localName}`);
 });
+
 
 bluetoothWatcher.getEvent('allDevicesDisconnected').subscribe(() => {
   log.info('all the devices disconnected');
@@ -68,11 +76,18 @@ bluetoothWatcher.getEvent('allDevicesDisconnected').subscribe(() => {
   }
 });
 
+_.forEach(dateHelper.getEvents(), event => {
+  event.subscribe(({formattedDate, event, minutesDiff}) => {
+    console.info(`EVENT ${event} at ${formattedDate}  -  ${minutesDiff} minutes ago`);
+  });
+});
+
 
 // Graceful shutdown
 process.on('SIGINT', () => {
   log.info('PROCESS TERMINATED...');
   bluetoothWatcher.stop();
+  dateHelper.stop();
   ledGreen.stop();
   ledBlue.stop();
   ledRed.stop();
