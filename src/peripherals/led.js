@@ -63,7 +63,8 @@ class Led {
 
   blink() {
     const blinkInterval = setInterval(() => {
-      this._led.writeSync(this._led.readSync() ^ 1);
+      this._led._actualSignal = this._actualSignal === MIN_SIGNAL ? MAX_SIGNAL : MIN_SIGNAL;
+      this._led.pwmWrite(this._actualSignal);
     }, 150);
 
     setTimeout(() => {
