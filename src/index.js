@@ -77,8 +77,8 @@ bluetoothWatcher.getEvent('allDevicesDisconnected').subscribe(() => {
 });
 
 _.forEach(dateHelper.getEvents(), event => {
-  event.subscribe(({formattedDate, event, minutesDiff}) => {
-    console.info(`EVENT ${event} at ${formattedDate}  -  ${minutesDiff} minutes ago`);
+  event.subscribe(event => {
+    console.info(`EVENT ${event.event} at ${event.formattedDate}  -  ${event.minutesDiff} minutes ago`);
   });
 });
 
