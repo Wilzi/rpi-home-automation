@@ -1,5 +1,6 @@
 'use strict';
 
+const q = require('q');
 const Gpio = require('pigpio').Gpio;
 
 const FADE_SPEED = 20;
@@ -30,8 +31,11 @@ class Led {
   }
 
   fadeIn() {
+    const deferred = q.defer();
+
     if (this._actualSignal === MAX_SIGNAL) {
-      return;
+      deferred.resolve(this._actualSignal);
+      return deferred.promise;
     }
 
     const interval = setInterval(() => {
@@ -40,12 +44,17 @@ class Led {
       this._actualSignal += 5;
       if (this._actualSignal >= MAX_SIGNAL) {
         this._actualSignal = MAX_SIGNAL;
+        deferred.resolve(this._actualSignal);
         clearInterval(interval);
       }
     }, FADE_SPEED);
+
+    return deferred.promise;
   }
 
   fadeOut() {
+    const deferred = q.defer();
+
     if (this._actualSignal === MIN_SIGNAL) {
       return;
     }
@@ -56,12 +65,17 @@ class Led {
       this._actualSignal -= 5;
       if (this._actualSignal <= MIN_SIGNAL) {
         this._actualSignal = MIN_SIGNAL;
+        deferred.resolve(this._actualSignal);
         clearInterval(interval);
       }
     }, FADE_SPEED);
+
+    return deferred.promise;
   }
 
   blink() {
+    const deferred = q.defer();
+
     const blinkInterval = setInterval(() => {
       this._led._actualSignal = this._actualSignal === MIN_SIGNAL ? MAX_SIGNAL : MIN_SIGNAL;
       this._led.pwmWrite(this._actualSignal);
@@ -69,8 +83,11 @@ class Led {
 
     setTimeout(() => {
       clearInterval(blinkInterval);
+      deferred.resolve(this._actualSignal);
       this.turnOff();
     }, 5000);
+
+    return deferred.promise;
   }
 
   static create(pin) {
