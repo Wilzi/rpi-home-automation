@@ -55,7 +55,7 @@ class DateHelper extends Events{
   // todo clear already emited events when it's a new day!
   _emitDailyEvents() {
     const currentDate = moment();
-    const solarEvents = SunCalc.getTimes(new Date(), config.LOCATION_LAT, config.LOCATION_LNG);
+    const solarEvents = this._getTimes();
 
     for (let event in solarEvents) {
       const date = solarEvents[event];
@@ -76,35 +76,32 @@ class DateHelper extends Events{
     }
   }
 
+  _getTimes() {
+    return SunCalc.getTimes(new Date(), config.LOCATION_LAT, config.LOCATION_LNG);
+  }
+
   _isEventAlreadyEmited(eventName) {
     return _.indexOf(this._alreadyEmitedEvents, eventName) > -1;
   }
 
   isMorning() {
     const hr = moment().format('H');
-    if (hr >= 0 && hr < 12) {
-      return true;
-    }
-
-    return false;
+    return (hr >= 0 && hr < 12);
   }
 
   isAfternoon() {
     const hr = moment().format('H');
-    if (hr >= 12 && hr <= 17) {
-      return true;
-    }
-
-    return false;
+    return (hr >= 12 && hr <= 17);
   }
 
   isEvening() {
     const hr = moment().format('H');
-    if (hr > 17) {
-      return true;
-    }
+    return (hr > 17);
+  }
 
-    return false;
+  isNight() {
+    const hr = moment().format('H');
+    return (hr >= 0 && hr < 6); // todo use _getTimes
   }
 
   static create() {
