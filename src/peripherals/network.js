@@ -1,76 +1,112 @@
 'use strict';
 
+// brew install nmap
+// OR
+// sudo apt-get install nmap
+
+const Rx = require('rx');
 const _ = require('lodash');
-const findLocalDevices = require('local-devices');
+const nmap = require('node-nmap');
+const Events = require('../lib/events');
 
-// https://github.com/bencevans/node-arp-listener
-// https://www.npmjs.com/package/local-devices
+class NmapScan extends Events {
+  constructor(ipRange = '', addresses = [], exitGracePeriod = 60000) {
+    super();
 
-// https://itsfoss.com/how-to-find-what-devices-are-connected-to-network-in-ubuntu/
-// https://www.npmjs.com/package/node-nmap
+    this._ipRange = ipRange;
+    this._addresses = addresses;
+    this._exitGracePeriod = exitGracePeriod;
+    this._connectedDevices = {};
+  }
 
-class Network {
-
-  constructor() {
-    this._inRangeDevices = {};
+  _initEvents() {
+    this._events = {
+      deviceConnected: new Rx.Subject(),
+      deviceDisconnected: new Rx.Subject(),
+      allDevicesDisconnected: new Rx.Subject(),
+      unknownDeviceDiscovered: new Rx.Subject()
+    };
   }
 
   scan() {
-    this._log('start scanning...');
-    findLocalDevices().then(devices => {
-//      console.log(devices);
-
-      const diff = _.differenceBy(devices, this._inRangeDevices, 'mac');
-      this._inRangeDevices = devices.map(d => {
-        d.lastSeen = new Date();
-        return d;
-      });
-
-      console.log(diff, 'diff');
-
-//      devices.forEach(device => {
-////        console.log(device);
-//
-//        if (this._isEntered(device.mac)) {
-//          this._log('"' + device.name + '" entered' + new Date());
-////          this._eventCallbacks.deviceConnected(device);
-//        }
-//
-//        this._saveInRageDevice(device);
-//      });
-
-      this.scan();
-    });
+    this._scanner = new nmap.QuickScan(this._ipRange);
+    this._subscribeForEvents();
+    this._scanner.startScan();
+    this._startOutOfRangeChecker();
   }
 
-  stop() {
-    this._inRangeDevices = {};
+  isDeviceConnected() {
+    return Object.keys(this._connectedDevices).length > 0;
+  }
 
-    if (this._scanInterval) {
-      clearInterval(this._scanInterval);
+  _subscribeForEvents() {
+    this._scanner.on('complete', this._scanHandler.bind(this));
+    this._scanner.on('error', this._errorHandler.bind(this));
+  }
+
+  _scanHandler(devices) {
+    devices = _.filter(devices, d => _.indexOf(this._addresses, d.mac) > -1);
+    
+    const newDevices = [];
+    
+    devices
+      .map(device => Object.assign(device, { lastSeen: Date.now() }))
+      .map(device => {
+        const mac = device.mac
+        if (mac) {
+          if (!this._connectedDevices[mac]) {
+            // console.log(`entered: IP: ${device.ip} MAC: ${mac} ${new Date()}`);
+            this._events.deviceConnected.onNext(device);
+          }
+          
+          newDevices[mac] = device;
+        }
+      });
+
+    this._connectedDevices = Object.assign({}, this._connectedDevices, newDevices);
+
+    this.scan();
+  }
+
+  _startOutOfRangeChecker() {
+    this._outOfRangeInterval = setInterval(this._outOfRangeHandler.bind(this), this._exitGracePeriod);
+  }
+
+  _outOfRangeHandler() {
+    const numberOfDevicesBeforeCleanup = Object.keys(this._connectedDevices).length;
+
+    for (let mac in this._connectedDevices) {
+      const device = this._connectedDevices[mac];
+
+      if (this._isDeviceOutOfRange(device)) {
+        // console.log(`exited: IP: ${device.ip} MAC: ${device.mac} ${new Date()}`);
+        this._events.deviceDisconnected.onNext(device);
+        delete this._connectedDevices[mac];
+      }
+    }
+
+    if (this._isAllDevicesDisconnected()) {
+        this._events.allDevicesDisconnected.onNext(true);
     }
   }
 
-  _isEntered(deviceId) {
-    return !this._inRangeDevices[deviceId];
-  }
 
-  _saveInRageDevice(deviceMetaData) {
-    this._inRangeDevices[deviceMetaData.mac] = Object.assign({}, deviceMetaData, { lastSeen: Date.now() });
+  _isAllDevicesDisconnected(numberOfDevicesBeforeCleanup) {
+    return Object.keys(this._connectedDevices).length === 0 && numberOfDevicesBeforeCleanup > 0;
   }
 
 
-  _log(string) {
-    console.log(`[NETWORK-SCANNER] ${string}`);
+  _isDeviceOutOfRange(device) {
+    return device.lastSeen < (Date.now() - this._exitGracePeriod);
   }
 
-  static create() {
-    return new Network();
+  _errorHandler(error) {
+    console.log(error, 'NmapScannerError');
+  }
+
+  static create(ipRange, addresses, exitGracePeriod) {
+    return new NmapScan(ipRange, addresses, exitGracePeriod);
   }
 }
 
-const network = Network.create();
-network.scan();
-
-
-module.exports = Network;
+module.exports = NmapScan;
