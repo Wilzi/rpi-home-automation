@@ -8,6 +8,8 @@ const Events = require('../lib/events');
 // Todo
 // - [ ] Use RSSI Threshold to determinate device distance
 
+const LOG_ENABLED = false;
+
 class BluetoothWatcher extends Events {
 
   constructor(addresses, exitGracePeriod) {
@@ -43,7 +45,8 @@ class BluetoothWatcher extends Events {
   }
 
 
-  scan() {
+  scan(allowDuplicates = true) {
+    this._allowDuplicates = allowDuplicates;
     noble.on('stateChange', this._onStateChangeHandler.bind(this));
     noble.on('discover', this._onDiscoverHandler.bind(this));
   }
@@ -66,9 +69,9 @@ class BluetoothWatcher extends Events {
 
   _onStateChangeHandler(state) {
     if (state === 'poweredOn') {
-      noble.startScanning([], true);
+      this._log('Scanning started...', this._allowDuplicates);
+      noble.startScanning([], this._allowDuplicates);
       this._startOutOfRangeChecker();
-      this._log('Scanning started...');
       return;
     }
 
@@ -95,12 +98,15 @@ class BluetoothWatcher extends Events {
 
 
   _startOutOfRangeChecker() {
+    this._log('start out of range checker', this._exitGracePeriod / 2);
     this._outOfRangeInterval = setInterval(this._outOfRangeHandler.bind(this), this._exitGracePeriod / 2);
   }
 
 
   _outOfRangeHandler() {
     const numberOfDevicesBeforeCleanup = Object.keys(this._inRangeDevices).length;
+
+    this._log('Check out of range devices...', numberOfDevicesBeforeCleanup);
 
     for (let id in this._inRangeDevices) {
       const device = this._inRangeDevices[id];
@@ -125,7 +131,8 @@ class BluetoothWatcher extends Events {
 
 
   _isDeviceOutOfRange(device) {
-    return device.lastSeen < (Date.now() - this._exitGracePeriod);
+    this._log('_isDeviceOutOfRange', device.lastSeen, Date.now() - this._exitGracePeriod);
+    return device.lastSeen <= (Date.now() - this._exitGracePeriod);
   }
 
 
@@ -144,8 +151,10 @@ class BluetoothWatcher extends Events {
   }
 
 
-  _log(event) {
-    // console.log(event);
+  _log(...event) {
+    if (LOG_ENABLED) {
+      console.log(...event);
+    }
   }
 
   static create(addresses, exitGracePeriod) {
