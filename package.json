@@ -1,24 +1,46 @@
 {
   "name": "rpi-home-automation",
+  "author": "Adam Pinter",
+  "license": "ISC",
+  "homepage": "https://github.com/Wilzi/rpi-home-automation",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Wilzi/rpi-home-automation.git"
+  },
   "version": "0.0.1",
   "description": "",
   "main": "src/index.js",
+  "engines": {
+    "node": "8.11.1"
+  },
   "scripts": {
-    "start": "sudo node src/index.js",
+    "start": "sudo node src/server/index.js >> ./log.txt",
     "start:seashells": "sudo node src/index.js | nc seashells.io 1337",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "author": "Adam Pinter",
-  "license": "ISC",
   "dependencies": {
-    "dotenv": "^5.0.1",
-    "pigpio": "1.0.0",
-    "local-devices": "1.1.1",
+    "airplay-server": "1.1.0",
+    "aplay": "1.2.0",
+    "audio-analyser": "1.0.2",
+    "color-convert": "1.9.1",
+    "dotenv": "5.0.1",
+    "hap-nodejs": "0.4.41",
+    "lame": "1.2.4",
     "lodash": "4.17.5",
     "moment": "2.22.0",
     "noble": "1.9.1",
+    "node-appletv": "1.0.9",
+    "node-nmap": "^4.0.0",
+    "nodetunes": "git://github.com/Kolky/nodetunes.git#master",
+    "pigpio": "1.0.0",
+    "popmotion": "8.1.22",
     "q": "1.5.1",
-    "rx": "^4.1.0",
-    "suncalc": "1.8.0"
+    "qrcode-terminal": "0.12.0",
+    "rx": "4.1.0",
+    "socket.io": "2.1.0",
+    "socket.io-client": "2.1.0",
+    "speaker": "0.4.1",
+    "suncalc": "1.8.0",
+    "weather-js": "^2.0.0"
   }
 }

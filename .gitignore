@@ -1,5 +1,10 @@
 .idea
+.vscode
+rpi-home-automation.code-workspace
 node_modules
 npm-debug.log
 .env
 log.txt
+persist
+src/spike
+build.zip
