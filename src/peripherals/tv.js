@@ -12,8 +12,13 @@ const exec = require('../lib/exec');
 class Tv {
   constructor() {
     // todo parse from cec client list on startup!
-    this._raspberryId = 10;
-    this._appleTvId = 30;
+    this._appleTvId = 10;
+    this._raspberryId = 20;
+    this._isTurnedOn = false;
+  }
+
+  isTurnedOn() {
+    return this._isTurnedOn;
   }
 
   getStatus() {
@@ -22,21 +27,31 @@ class Tv {
     });
   }
 
+  toggle() {
+    if(this.isTurnedOn()) {
+      return this.turnOff();
+    }
+
+    return this.turnOn();
+  }
+
   turnOn() {
     return exec('echo "on 0" | cec-client -s').then(() => {
-      console.log('TURN TV ON');
+      console.debug('TURN TV ON');
+      this._isTurnedOn = true;
     });
   }
 
   turnOff() {
     return exec('echo "standby 0" | cec-client -s').then(() => {
-      console.log('TURN TV OFF');
+      console.debug('TURN TV OFF');
+      this._isTurnedOn = false;
     });
   }
 
   getCecList() {
     return exec('echo "scan" | cec-client RPI -s -d 1').then(stdout => {
-      console.log(stdout, 'LIST CEC');
+      return this._parseCecList(stdout);
     });
   }
 
@@ -52,6 +67,28 @@ class Tv {
     return exec(`echo "tx 2F:82:${id}:00" | cec-client RPI -s -d 4`).then(() => {
       console.log('SET TV SOURCE TO :', id);
     });
+  }
+
+  _parseCecList(input) {
+    const devices = input.split('\n\n');
+    const regexp = /([\w #\d]+):\s+([\w\d.]+)/ig;
+
+    const devicesData = [];
+
+    for(let device of devices) {
+      const matches = device.match(regexp);
+      if (matches) {
+        const d = [];
+        for(let match of matches) {
+          const m = match.match(/([\w #\d]+):\s+([\w\d.]+)/i);
+          d[m[1]] = m[2];
+        }
+
+        devicesData.push(d);
+      }
+    }
+
+    return devicesData;
   }
 
   static create() {
