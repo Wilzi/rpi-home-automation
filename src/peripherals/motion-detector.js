@@ -13,6 +13,7 @@ class MotionDetector extends Events {
     this._motionDetector = new Gpio(gpioPin, { mode: Gpio.INPUT, alert: true });
     this._motionDetected = false;
     this._nonMotionTimeout = null;
+    this._motionDetectedDate = new Date();
   }
 
   _initEvents() {
@@ -32,6 +33,10 @@ class MotionDetector extends Events {
     return this._motionDetected;
   }
 
+  getLastMotionDetectedDate() {
+    return this._motionDetectedDate;
+  }
+
   _motionHandler(value) {
     if (value) {
       this._handleMotion();
@@ -43,6 +48,7 @@ class MotionDetector extends Events {
 
   _handleMotion() {
     this._clearNonMotionTimeout();
+    this._motionDetectedDate = new Date();
 
     if (this._motionDetected) {
       return;
