@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"/>
+    <meta name="apple-mobile-web-app-capable" content="yes"/>
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+    <meta name="apple-mobile-web-app-title" content="Home">
+
+    <link rel="stylesheet" type="text/css" href="style.css">
+    <!--<link href="https://fonts.googleapis.com/css?family=Montserrat:100" rel="stylesheet">-->
+    <!--<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.1.0/socket.io.js"></script>-->
+    <!--<script src="https://unpkg.com/popmotion/dist/popmotion.global.min.js"></script>-->
+    <!--<script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.22.1/moment.min.js"></script>-->
+
+    <script src="vendor/socket.io.2.1.0.js"></script>
+    <script src="vendor/popmotion.js"></script>
+    <script src="vendor/moment.2.22.2.js"></script>
+
+    <script src="color-helper.js"></script>
+  </head>
+  <body>
+    <div id='container' class="container">
+      <h1 id="cpuTemp">Reading &deg;C</h1>
+
+      <input type="range" min="0" max="360" value="0" id="H" class="slider hue">
+      <input type="range" min="0" max="100" value="100" id="S" class="slider saturation">
+      <input type="range" min="0" max="100" value="100" id="V" class="slider value">
+
+      <div id="predefinedColorsContainer"></div>
+      <button id="addColorScene" class="addColor">+</button>
+
+      <input type="range" min="0" max="255" value="0" id="R" class="slider red">
+      <input type="range" min="0" max="255" value="0" id="G" class="slider green">
+      <input type="range" min="0" max="255" value="0" id="B" class="slider blue">
+      <input type="range" min="0" max="255" value="0" id="A" class="slider brightness">
+
+      <input type="range" min="0" max="20000" value="2000" id="A" class="slider duration">
+
+      <div class="wrapper">
+        <input type="checkbox" name="toggle" id="automationToggle">
+        <label for="automationToggle"></label>
+      </div>
+    </div>
+
+    <h4 id="onlineStatus"></h4>
+    <span id="debug"></span>
+
+    <script src="script.js"></script>
+  </body>
+</html>
